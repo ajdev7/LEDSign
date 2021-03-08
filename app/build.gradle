@@ -1,0 +1,39 @@
+apply plugin: 'com.android.application'
+
+android {
+    signingConfigs {
+        config {
+            keyAlias 'robert'
+            keyPassword 'christy1'
+//            storeFile file('C:/Users/roelliott/.android/debug.keystore')
+            storePassword 'christy1'
+        }
+    }
+    compileSdkVersion 28
+    buildToolsVersion '28.0.3'
+    defaultConfig {
+        applicationId "com.roelliott.RobertElliott"
+        minSdkVersion 19
+        targetSdkVersion 28
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
+        }
+    }
+}
+
+//dependencies {
+//}
+
+repositories {
+    maven {
+        url 'https://maven.google.com/'
+        name 'Google'
+    }
+    jcenter()
+    maven {
+        url 'https://mvnrepository.com/artifact/com.android.tools.lint/lint-gradle-api'
+    }
+}

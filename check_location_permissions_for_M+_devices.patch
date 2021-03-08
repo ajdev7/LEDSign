@@ -1,0 +1,89 @@
+Index: app/src/main/java/com/roelliott/RobertElliott/DeviceScanActivity.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/java/com/roelliott/RobertElliott/DeviceScanActivity.java	(revision 4bd4e4280b05b6aa54aefc43b6686b91942dbbde)
++++ app/src/main/java/com/roelliott/RobertElliott/DeviceScanActivity.java	(revision cdd30bbe130add4af519f0bfbab362627e15730e)
+@@ -16,6 +16,7 @@
+ 
+ package com.roelliott.RobertElliott;
+ 
++import android.Manifest;
+ import android.app.Activity;
+ import android.app.ListActivity;
+ import android.bluetooth.BluetoothAdapter;
+@@ -24,6 +25,7 @@
+ import android.content.Context;
+ import android.content.Intent;
+ import android.content.pm.PackageManager;
++import android.os.Build;
+ import android.os.Bundle;
+ import android.os.Handler;
+ import android.util.Log;
+@@ -45,6 +47,8 @@
+  */
+ public class DeviceScanActivity extends ListActivity {
+     private final static String TAG = DeviceScanActivity.class.getSimpleName();
++    private static final int REQUEST_LOCATION_PERMISSIONS_CODE = 1;                     //Constant to identify response from Activity that enables permissions
++
+     private LeDeviceListAdapter mLeDeviceListAdapter;                   //List adapter to hold list of BLE devices from a scan
+     private BluetoothAdapter mBluetoothAdapter;                         //BluetoothAdapter represents the radio in the Smartphone
+     private boolean mScanning;                                          //Keep track of whether there is a scan in progress
+@@ -55,6 +59,7 @@
+     Button bExitAll;
+     ViewHolder myHolder; //me
+ 
++    private boolean hasPermissionsAsked;
+     //String deviceName;
+ 
+     // ----------------------------------------------------------------------------------------------------------------
+@@ -193,9 +198,10 @@
+                     invalidateOptionsMenu();                        //Declare that the options menu has changed, so should be recreated.
+                 }
+             }, SCAN_PERIOD);
+-
+-            mScanning = true;                                       //Indicate that we are busy scanning - used for menu Stop/Scan context
+-            mBluetoothAdapter.startLeScan(mLeScanCallback);         //Start scanning with callback method to execute when a new BLE device is found
++            if (checkPermissions()) {
++                mScanning = true;                                       //Indicate that we are busy scanning - used for menu Stop/Scan context
++                mBluetoothAdapter.startLeScan(mLeScanCallback);         //Start scanning with callback method to execute when a new BLE device is found
++            }
+         } else {                                                    //Method was called with option to stop scanning
+             mScanning = false;                                      //Indicate that we are not scanning - used for menu Stop/Scan context
+             mBluetoothAdapter.stopLeScan(mLeScanCallback);          //Stop scanning - callback method indicates which scan to stop
+@@ -203,6 +209,34 @@
+         invalidateOptionsMenu();                                    //Declare that the options menu has changed, so should be recreated.
+     }
+ 
++    /**
++     * For Marshmallow and above we should check if user granted permission and if not let's ask him to grant
++     */
++    private boolean checkPermissions() {
++        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
++                && checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
++                && !hasPermissionsAsked) {
++            Log.w(TAG, "User doesn't have permission granted");
++            requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, REQUEST_LOCATION_PERMISSIONS_CODE);
++            hasPermissionsAsked = true;
++            return false;
++        }
++        return true;
++    }
++
++    @Override
++    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
++        if (requestCode == REQUEST_LOCATION_PERMISSIONS_CODE && permissions.length > 0 && grantResults.length > 0
++                && permissions[0].equals(Manifest.permission.ACCESS_COARSE_LOCATION) && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
++            // if user granted permissions let's rescan
++            scanLeDevice(true);
++            Log.w(TAG, "User granted location permission ");
++        } else {
++            Toast.makeText(this, "If permission is not granted application won't be able to scan bluetooth devices", Toast.LENGTH_LONG).show();
++        }
++        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
++    }
++
+     // ----------------------------------------------------------------------------------------------------------------
+     // Device scan callback. Bluetooth adapter calls this method when a new device is discovered during a scan.
+     private final BluetoothAdapter.LeScanCallback mLeScanCallback = new BluetoothAdapter.LeScanCallback() {
